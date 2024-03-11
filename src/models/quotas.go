@@ -1,11 +1,16 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Quota struct {
-	ID            int
-	current_count int
-	max_count     int
-	created_at    time.Time
-	updated_at    time.Time
+	gorm.Model
+	CurrentCount int
+	MaxCount     int
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	User         User `gorm:"foreignKey:ID"` // This line references the User's primary key
 }

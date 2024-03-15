@@ -18,6 +18,11 @@ func CreateUser(ctx context.Context, c *app.RequestContext, userRepo repositorie
 		return
 	}
 
+	if user, err := services.GetUserByID(ctx, int(user.ID), userRepo); user != nil || err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": "Someting went wrong, user possibly already exists or error fetching user by ID"})
+		return
+	}
+
 	if err := services.CreateUser(ctx, &user, userRepo); err != nil {
 		c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

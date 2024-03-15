@@ -2,42 +2,45 @@ package controllers
 
 import (
 	"context"
-	"lsplanner-go/config"
-	"lsplanner-go/models"
+	"lsplanner-go/repositories"
+	"lsplanner-go/services"
 	"net/http"
+	"strconv"
 
 	"github.com/cloudwego/hertz/pkg/app"
 )
 
-func setupQuota(ctx context.Context, c *app.RequestContext) {
-	var db, err = config.ConnectDB()
+func GetByID(ctx context.Context, c *app.RequestContext, quotaRepo repositories.QuotaRepo) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{"error": "database not found"})
-		return
-	}
-	var quota models.Quota
-	if err := c.Bind(&quota); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid user ID"})
 		return
 	}
 
-	if result := db.Create(&quota); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{"error": result.Error.Error()})
+	user, err := services.GetByID(ctx, id, quotaRepo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, &quota)
+	if user == nil {
+		c.JSON(http.StatusNotFound, map[string]string{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
-func getQuota(ctx context.Context, c *app.RequestContext) {
-	var db, err = config.ConnectDB()
+func Init(ctx context.Context, c *app.RequestContext, quotaRepo repositories.QuotaRepo) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{"error": "database not found"})
+		c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid user ID"})
 		return
 	}
-	var quota []models.Quota
-	if result := db.Find(&quota); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{"error": result.Error.Error()})
+	_, err = services.InitQuota(ctx, id, 50, quotaRepo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, &quota)
+	c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }

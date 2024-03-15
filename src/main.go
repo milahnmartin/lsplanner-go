@@ -52,6 +52,10 @@ func main() {
 	userGroup := h.Group("/api/v1/users")
 	routes.UserRoutes(userGroup, userRepo)
 
+	quotaRepo := repositories.NewQuotaRepo(db)
+	quotaGroup := h.Group("/api/v1/quotas")
+	routes.QuotaRoutes(quotaGroup, quotaRepo)
+
 	h.Spin()
 }
 

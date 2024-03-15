@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
 	"lsplanner-go/config"
-	"lsplanner-go/controllers"
 	"lsplanner-go/models"
+	"lsplanner-go/repositories"
+	"lsplanner-go/routes"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -19,21 +22,35 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Running database migrations
-	if err := db.AutoMigrate(&models.Quota{}, &models.User{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.LoadsheddingArea{}, &models.Quota{}); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	// Initialize the controllers with the database instance
-	controllers.Initialize(db)
+	redisAddress := os.Getenv("REDIS_URL")
+	if redisAddress == "" {
+		redisAddress = "localhost:6379"
+	}
+	redisPass := os.Getenv("REDIS_PASSW")
+	if redisPass == "" {
+		redisPass = ""
+	}
+
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddress, Password: redisPass, DB: 0})
+
+	ctx := context.Background()
+	_, err = redisClient.Ping(ctx).Result()
+	if err != nil {
+		log.Println("URL IS", os.Getenv("REDIS_URL"))
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+
+	log.Println("Connected to Redis successfully.")
 
 	h := server.New(server.WithHostPorts(optimalPort))
 
-	h.GET("/users/:id", controllers.GetUser)
-	h.GET("/users", controllers.GetAllUsers) // Assuming you have a GetAllUsers function in your controllers
-	h.POST("/users", controllers.CreateUser)
-	h.PUT("/users/:id", controllers.UpdateUser)    // Assuming you have UpdateUser function in your controllers
-	h.DELETE("/users/:id", controllers.DeleteUser) // Assuming you have DeleteUser function in your controllers
+	userRepo := repositories.NewUserRepo(db)
+	userGroup := h.Group("/api/v1/users")
+	routes.UserRoutes(userGroup, userRepo)
 
 	h.Spin()
 }

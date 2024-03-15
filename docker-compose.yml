@@ -3,6 +3,13 @@ version: '3.9'
 services:
  lsplanner-redis:
     image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - REDIS_REPLICATION_NODE_ID=1
+      - REDIS_REPLICATION_NODE_ADDRESS=lsplanner-redis:6379
+      - REDIS_REPLICATION_NODE_MASTER_AUTH=lsplanner
 
  lsplanner-database:
     image: "postgres:alpine"
@@ -27,3 +34,6 @@ services:
     depends_on:
       lsplanner-database:
         condition: service_healthy
+    environment:
+      - REDIS_URL=lsplanner-redis:6379
+      - REDIS_PASSW=lsplanner

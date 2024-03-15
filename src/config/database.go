@@ -12,7 +12,7 @@ import (
 // Connects to the PostgreSQL database using GORM.
 // Returns a pointer to the GORM DB object and any error encountered.
 func ConnectDB() (*gorm.DB, error) {
-	dbURL := getDBURL("DB_URL")
+	dbURL := getDBURL("DATABASE_URL")
 
 	// Attempt to open a connection to the database.
 	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})

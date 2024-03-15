@@ -8,9 +8,8 @@ import (
 
 type Quota struct {
 	gorm.Model
-	CurrentCount int
+	CurrentCount int `gorm:"default:0" json:"current_count"`
 	MaxCount     int
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
-	User         User `gorm:"foreignKey:ID"` // This line references the User's primary key
 }
